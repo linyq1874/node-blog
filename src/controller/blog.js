@@ -1,6 +1,4 @@
-const {
-  exec
-} = require("../db/mysql");
+const { exec } = require("../db/mysql");
 
 const getBlogList = (author, keyword) => {
   let sql = `select * from blogs where 1=1 `;
@@ -13,42 +11,49 @@ const getBlogList = (author, keyword) => {
     sql += `and title like '%${keyword}%' or content like '%${keyword}%' `;
   }
 
-  sql += `order by createtime desc;`
+  sql += `order by createtime desc;`;
 
   return exec(sql);
-}
+};
 
-const getBlogDetail = (id) => {
-  console.log(id);
+const getBlogDetail = id => {
+  const sql = `
+    select * from blogs where id = '${id}';
+  `;
+  return exec(sql).then(raws => raws[0]);
+};
 
-  return {
-    id: "3",
-    author: "wang wu",
-    createTime: "1567926652422",
-    title: "标题3",
-    content: "内容3"
-  }
-}
+const newBlog = (blogData = {}) => {
+  const { title, content, author } = blogData;
+  const createtime = Date.now();
 
-const newBlog = (data) => {
-  console.log(data);
+  const sql = `
+    insert into blogs (title, content, author, createtime) values
+    ('${title}', '${content}', '${author}', ${createtime});
+  `;
 
-  return {
-    id: 7
-  }
-}
+  return exec(sql).then(insertData => ({
+    id: insertData.insertId
+  }));
+};
 
-const updateBlog = (data, id) => {
-  console.log(data, id);
+const updateBlog = (blogData = {}, id) => {
+  const { title, content } = blogData;
+  // 删除增加作者时，为了让删除更加安全，只有在本作者的前提下，才能删除
+  const sql = `
+    update blogs set title = '${title}', content = '${content}' where id = '${id}';
+  `;
+  return exec(sql).then(updateData =>
+    updateData.affectedRows > 0 ? true : false
+  );
+};
 
-  return true
-}
-
-const delBlog = (id) => {
-  console.log(id);
-
-  return true
-}
+const delBlog = (id, author) => {
+  const sql = `
+    delete from blogs where id = '${id}' and author = '${author}';
+  `;
+  return exec(sql).then(delData => (delData.affectedRows > 0 ? true : false));
+};
 
 module.exports = {
   getBlogList,
@@ -56,4 +61,4 @@ module.exports = {
   newBlog,
   updateBlog,
   delBlog
-}
+};
