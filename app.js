@@ -3,11 +3,17 @@ const handleUserRouter = require("./src/router/user");
 const querystring = require("querystring");
 
 const {
-  getPostData
+  getPostData,
+  getCookieExpires
 } = require("./src/utils")
 
+const SESSION_DATA = {};
+
 const serverHandle = (req, res) => {
+  // 设置返回JSON 
   res.setHeader("Content-type", "application/json");
+
+  // 解析URL 获取path 和query
   const url = req.url;
   const path = url.split("?")[0];
   const query = url.split("?")[1];
@@ -15,23 +21,54 @@ const serverHandle = (req, res) => {
   req.path = path;
   req.query = querystring.parse(query);
 
+  // 解析cookie
+  const cookieStr = req.headers.cookie || "";
+  req.cookie = {};
+
+  cookieStr.split(";").forEach(item => {
+    if (!item) {
+      return;
+    }
+    const arr = item.split("=");
+    const key = arr[0].trim();
+    const val = arr[1].trim();
+
+    req.cookie[key] = val;
+  })
+
+  let needSetCookie = false;
+
+  // 解析session
+  let usrId = req.cookie.userId;
+  if (usrId) {
+    if (!SESSION_DATA[userId]) {
+      SESSION_DATA[userId] = {}
+    }
+  } else {
+    needSetCookie = true;
+    userId = `${Date.now()}_${Math.random()}`;
+    SESSION_DATA[userId] = {}
+  }
+  req.session = SESSION_DATA[userId];
+
+  // postData处理
   getPostData(req).then(postData => {
 
     req.body = postData;
 
-
-    // const blogData = handleBlogRouter(req, res);
-
-    // if (blogData) {
-    //   res.end(
-    //     JSON.stringify(blogData)
-    //   )
-    //   return;
-    // }
-
+    // 博客路由解析
     const blogResult = handleBlogRouter(req, res);
     if (blogResult) {
       blogResult.then(data => {
+          if (needSetCookie) {
+            /**
+             * 操作cookie
+             * 跟路由让所有的页面都生效
+             * httpOnly 让cookie 只能server端才能操作，无法让客户端来操作，安全
+             */
+            res.setHeader("Set-Cookie", `userId=${userId};path=/;httpOnly;expires=${getCookieExpires()}`);
+          }
+
           res.end(
             JSON.stringify(data)
           )
@@ -44,12 +81,28 @@ const serverHandle = (req, res) => {
       return;
     }
 
-    const userData = handleUserRouter(req, res);
+    // 登录路由解析
+    const userResult = handleUserRouter(req, res);
+    if (userResult) {
+      userResult.then(data => {
+          if (needSetCookie) {
+            /**
+             * 操作cookie
+             * 跟路由让所有的页面都生效
+             * httpOnly 让cookie 只能server端才能操作，无法让客户端来操作，安全
+             */
+            res.setHeader("Set-Cookie", `userId=${userId};path=/;httpOnly;expires=${getCookieExpires()}`);
+          }
+          res.end(
+            JSON.stringify(data)
+          )
+        })
+        .catch(err => {
+          res.end(
+            JSON.stringify(err)
+          )
+        })
 
-    if (userData) {
-      res.end(
-        JSON.stringify(userData)
-      )
       return;
     }
 

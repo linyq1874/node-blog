@@ -5,12 +5,19 @@ const {
   updateBlog,
   delBlog
 } = require("../controller/blog");
-const { SuccessModel, ErrorModel } = require("../model/resModel");
+const {
+  SuccessModel,
+  ErrorModel
+} = require("../model/resModel");
 
 const handleBlogRouter = (req, res) => {
   const method = req.method;
 
-  const { author, keyword, id } = req.query;
+  const {
+    author,
+    keyword,
+    id
+  } = req.query;
 
   if (method === "GET" && req.path === "/api/blog/list") {
     return getBlogList(author, keyword)
@@ -19,7 +26,11 @@ const handleBlogRouter = (req, res) => {
   }
   if (method === "GET" && req.path === "/api/blog/detail") {
     return getBlogDetail(id)
-      .then(res => new SuccessModel(res))
+      .then(res => {
+        console.log("res", res);
+
+        return new SuccessModel(res)
+      })
       .catch(err => new ErrorModel(err));
   }
   if (method === "POST" && req.path === "/api/blog/new") {
