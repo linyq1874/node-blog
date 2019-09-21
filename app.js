@@ -1,11 +1,14 @@
+const querystring = require("querystring");
+
 const handleBlogRouter = require("./src/router/blog");
 const handleUserRouter = require("./src/router/user");
-const querystring = require("querystring");
 
 const {
   getPostData,
   getCookieExpires
 } = require("./src/utils")
+
+
 
 const SESSION_DATA = {};
 
@@ -25,6 +28,7 @@ const serverHandle = (req, res) => {
   const cookieStr = req.headers.cookie || "";
   req.cookie = {};
 
+
   cookieStr.split(";").forEach(item => {
     if (!item) {
       return;
@@ -39,17 +43,21 @@ const serverHandle = (req, res) => {
   let needSetCookie = false;
 
   // 解析session
-  let usrId = req.cookie.userId;
-  if (usrId) {
+  let userId = req.cookie.userId;
+
+  if (userId) {
     if (!SESSION_DATA[userId]) {
       SESSION_DATA[userId] = {}
     }
   } else {
     needSetCookie = true;
-    userId = `${Date.now()}_${Math.random()}`;
+    userId = `uuid_${Date.now()}_${Math.random()}`;
     SESSION_DATA[userId] = {}
   }
   req.session = SESSION_DATA[userId];
+
+  // 记录sessionId
+  req.sessionId = 'myName'
 
   // postData处理
   getPostData(req).then(postData => {
