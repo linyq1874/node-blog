@@ -2,6 +2,9 @@ const querystring = require("querystring");
 
 const handleBlogRouter = require("./src/router/blog");
 const handleUserRouter = require("./src/router/user");
+const {
+  access
+} = require("./src/utils/log");
 
 const {
   getPostData,
@@ -13,6 +16,11 @@ const {
 const SESSION_DATA = {};
 
 const serverHandle = (req, res) => {
+  if (req.url === "/favicon.ico") return;
+  // 写记录日志
+  access(`${req.method} -- ${req.url} -- ${req.headers['user-agent']} -- ${new Date()}`)
+
+
   // 设置返回JSON 
   res.setHeader("Content-type", "application/json");
 
@@ -24,7 +32,10 @@ const serverHandle = (req, res) => {
   req.path = path;
   req.query = querystring.parse(query);
 
-  // 解析cookie
+  /**
+   * 解析cookie
+   * 每次请求接口时，都会把cookie附带在 request的 headers 中
+   */
   const cookieStr = req.headers.cookie || "";
   req.cookie = {};
 
